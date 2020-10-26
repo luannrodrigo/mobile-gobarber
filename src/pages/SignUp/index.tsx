@@ -14,6 +14,7 @@ import { Form } from '@unform/mobile';
 import { FormHandles } from '@unform/core';
 import * as Yup from 'yup';
 
+import api from '../../service/api';
 import getValidationErrors from '../../utils/getValidationErrors';
 
 import Input from '../../components/Input';
@@ -55,6 +56,15 @@ const SignUp: React.FC = () => {
       await schema.validate(data, {
         abortEarly: false,
       });
+      console.log(data);
+
+      await api.post('/users', data);
+      Alert.alert(
+        'cadastro realizado com sucesso',
+        'Você já pode conectar na api!',
+      );
+
+      navigation.goBack();
     } catch (err) {
       if (err instanceof Yup.ValidationError) {
         const errors = getValidationErrors(err);
@@ -63,6 +73,7 @@ const SignUp: React.FC = () => {
 
         return;
       }
+
       Alert.alert(
         'Erro na criação da conta',
         'Erro na criacao da conta, verifique as credenciais',
