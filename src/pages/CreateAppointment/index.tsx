@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
-
 import Icon from 'react-native-vector-icons/Feather';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
+import { Platform } from 'react-native';
 import api from '../../service/api';
 import { useAuth } from '../../hooks/auth';
 
@@ -17,6 +18,10 @@ import {
   ProviderContainer,
   ProviderAvatar,
   ProviderName,
+  Calendar,
+  Title,
+  OpenDatePickerButton,
+  OpenDatePickerButtonText,
 } from './styles';
 
 interface RouteParams {
@@ -26,6 +31,11 @@ export interface Provider {
   id: string;
   name: string;
   avatar_url: string;
+}
+
+interface AvailabilityItem {
+  hour: number;
+  available: boolean;
 }
 
 const CreateAppointment: React.FC = () => {
@@ -40,6 +50,10 @@ const CreateAppointment: React.FC = () => {
     routeParams.providerId,
   );
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [availability, setAvailability] = useState<AvailabilityItem[]>([]);
+
   useEffect(() => {
     api.get('providers').then(response => {
       setProviders(response.data);
@@ -53,6 +67,37 @@ const CreateAppointment: React.FC = () => {
   const handleSelectProvider = useCallback((providerId: string) => {
     setSelectedProvider(providerId);
   }, []);
+
+  const handleToggleDatePicker = useCallback(() => {
+    setShowDatePicker(state => !state);
+  }, []);
+
+  const handleDateChanged = useCallback(
+    (event: any, date: Date | undefined) => {
+      if (Platform.OS === 'android') {
+        setShowDatePicker(false);
+      }
+
+      if (date) {
+        setSelectedDate(date);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    api
+      .get(`providers/${selectedProvider}/day-availability`, {
+        params: {
+          year: selectedDate.getFullYear(),
+          month: selectedDate.getMonth() + 1,
+          day: selectedDate.getDate(),
+        },
+      })
+      .then(response => {
+        setAvailability(response.data);
+      });
+  }, [selectedProvider, selectedDate]);
 
   return (
     <Container>
@@ -75,7 +120,7 @@ const CreateAppointment: React.FC = () => {
               onPress={() => handleSelectProvider(provider.id)}
               selected={provider.id === selectedProvider}
             >
-              <ProviderAvatar source={{ uri: user.avatar_url }} />
+              <ProviderAvatar source={{ uri: provider.avatar_url }} />
               <ProviderName selected={provider.id === selectedProvider}>
                 {provider.name}
               </ProviderName>
@@ -83,6 +128,23 @@ const CreateAppointment: React.FC = () => {
           )}
         />
       </ProvidersListContainer>
+      <Calendar>
+        <Title>Escolha a data</Title>
+
+        <OpenDatePickerButton onPress={handleToggleDatePicker}>
+          <OpenDatePickerButtonText>
+            Selecionar outra data
+          </OpenDatePickerButtonText>
+        </OpenDatePickerButton>
+        {showDatePicker && (
+          <DateTimePicker
+            mode="date"
+            display="calendar"
+            onChange={handleDateChanged}
+            value={new Date()}
+          />
+        )}
+      </Calendar>
     </Container>
   );
 };
