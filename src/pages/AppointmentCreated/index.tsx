@@ -1,6 +1,9 @@
-import React, { useCallback } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import React, { useMemo, useCallback } from 'react';
 import Icon from 'react-native-vector-icons/Feather';
+
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
 
 import {
   Container,
@@ -10,27 +13,41 @@ import {
   OkButtonText,
 } from './styles';
 
-const AppointmentCreated: React.FC = () => {
-  const { reset } = useNavigation();
+interface RouteParams {
+  date: number;
+}
 
-  const handleOkPressed = useCallback(() => {
-    reset({
+const AppointmentCreated: React.FC = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+  const params = route.params as RouteParams;
+
+  const formattedDate = useMemo(() => {
+    return format(
+      params.date,
+      "EEEE', dia' dd 'de' MMMM 'de' yyyy 'às' HH:mm'h'",
+      { locale: ptBR },
+    );
+  }, [params.date]);
+
+  const handleOk = useCallback(() => {
+    navigation.reset({
+      index: 0,
       routes: [
         {
           name: 'Dashboard',
         },
       ],
-      index: 0,
     });
-  }, [reset]);
+  }, [navigation]);
 
   return (
     <Container>
-      <Icon name="check" size={80} color="#04d631" />
-      <Title>Agendamento condluído</Title>
-      <Description>Terça, dia 14 de dezembro de 2020 ás 12:00</Description>
+      <Icon name="check" size={80} color="#04d361" />
+      <Title>Agendamento concluído</Title>
+      <Description>{formattedDate}</Description>
 
-      <OkButton onPress={handleOkPressed}>
+      <OkButton onPress={handleOk}>
         <OkButtonText>Ok</OkButtonText>
       </OkButton>
     </Container>
